@@ -17,7 +17,11 @@ def load_data(filename):
         y: 电压数据数组
     """
     # 在此处编写代码，读取数据文件
-    pass
+    try:
+        data = np.loadtxt(filename)        #若成功加载数据
+        return data[:, 0], data[:, 1]      #返回两个数组
+    except Exception as e:                 #若失败
+        raise FileNotFoundError(f"无法加载文件: {filename}") from e      #抛出异常
 
 def calculate_parameters(x, y):
     """
@@ -36,7 +40,25 @@ def calculate_parameters(x, y):
         Exy: xy的平均值
     """
     # 在此处编写代码，计算Ex, Ey, Exx, Exy, m和c
-    pass
+    if len(x) == 0 or len(y) == 0:
+        raise ValueError("输入数据不能为空")       #检查输入数据是否为空
+    if len(x) != len(y):
+        raise ValueError("x和y数组长度必须相同")   #检查长度是否一致
+    
+    N = len(x)
+    Ex = np.mean(x)
+    Ey = np.mean(y)
+    Exx = np.mean(x**2)
+    Exy = np.mean(x*y)
+    
+    denominator = Exx - Ex**2           #计算均值方差
+    if denominator == 0:
+        raise ValueError("无法计算参数，分母为零")   
+    
+    m = (Exy - Ex*Ey) / denominator
+    c = (Exx*Ey - Ex*Exy) / denominator #计算斜率截距
+    
+    return m, c, Ex, Ey, Exx, Exy
 
 def plot_data_and_fit(x, y, m, c):
     """
@@ -52,7 +74,17 @@ def plot_data_and_fit(x, y, m, c):
         fig: matplotlib图像对象
     """
     # 在此处编写代码，绘制数据点和拟合直线
-    pass
+    if np.isnan(m) or np.isnan(c):
+        raise ValueError("斜率和截距不能为NaN")    #检查斜率截距是否为NaN
+    
+    fig, ax = plt.subplots()
+    ax.scatter(x, y, label='实验数据')
+    y_fit = m*x + c
+    ax.plot(x, y_fit, 'r', label='拟合直线')       #创建散点图和直线
+    ax.set_xlabel('频率 (Hz)')
+    ax.set_ylabel('电压 (V)')
+    ax.legend()
+    return fig                                    #返回绘制图表
 
 def calculate_planck_constant(m):
     """
@@ -70,7 +102,14 @@ def calculate_planck_constant(m):
     
     # 在此处编写代码，计算普朗克常量和相对误差
     # 提示: 实际的普朗克常量值为 6.626e-34 J·s
-    pass
+    if m <= 0:
+        raise ValueError("斜率必须为正数")
+    
+    e = 1.602e-19  # 电子电荷
+    h = m * e                                       #计算h
+    actual_h = 6.626e-34
+    relative_error = abs(h - actual_h) / actual_h * 100
+    return h, relative_error                        #计算计算值与实际值之间的相对误差
 
 def main():
     """主函数"""
